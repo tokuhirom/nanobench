@@ -9,6 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+/**
+ * Copyright © 2014 Tokuhiro Matsuno, http://64p.org/ <tokuhirom@gmail.com>
+ *
+ * This is free software; you can redistribute it and/or modify it under the same terms as the Perl 5 programming language system itself.
+ */
 public class Benchmark {
 	final List<Scenario> scenarios = new ArrayList<Scenario>();
 	final Map<Long, Score> emptyLoopCache = new HashMap<>();
