@@ -8,7 +8,7 @@ import org.springframework.web.util.HtmlUtils;
 
 import com.google.common.html.HtmlEscapers;
 
-public class HTMLEscape {
+public class HTMLEscapeTest {
 	@Test
 	public void testHTMLEscape() throws Exception {
 		final String src = "<><><><>&&&&;;;;jl2kjlnnfljflksdjfuowu-9urjnl321knl;fu3poifuokbkvnl;uigufjslfjadsipuru1o2krn;lkmfzkjhvojopijkJ:LJKU)!*)($J!KLJOIFHS)JPJ";

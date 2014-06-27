@@ -23,7 +23,7 @@
 
 		<dependency>
 			<groupId>me.geso</groupId>
-			<artifactId>benchmark</artifactId>
+			<artifactId>nanobench</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 
