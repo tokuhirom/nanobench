@@ -3,10 +3,10 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>me.geso</groupId>
-	<artifactId>benchmark</artifactId>
+	<artifactId>nanobench</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>benchmark</name>
-	<description>benchmark</description>
+	<name>nanobench</name>
+	<description>Tiny benchmarking framework for Java 8</description>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
