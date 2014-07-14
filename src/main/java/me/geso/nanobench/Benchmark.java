@@ -1,23 +1,36 @@
 package me.geso.nanobench;
 
-import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
 
 /**
  * Copyright © 2014 Tokuhiro Matsuno, http://64p.org/ <tokuhirom@gmail.com>
  *
- * This is free software; you can redistribute it and/or modify it under the same terms as the Perl 5 programming language system itself.
+ * This is free software; you can redistribute it and/or modify it under the same terms as the Perl
+ * 5 programming language system itself.
  */
-public class Benchmark {
-	final List<Scenario> scenarios = new ArrayList<Scenario>();
+public abstract class Benchmark {
+
 	final Map<Long, Score> emptyLoopCache = new HashMap<>();
 	private boolean debug = false;
+
+	final Method[] methods;
+
+	public Benchmark() {
+		Method[] allMethods = this.getClass().getMethods();
+		ArrayList<Method> methodsList = new ArrayList<>();
+		for (Method method : allMethods) {
+			if (method.getName().startsWith("bench")) {
+				methodsList.add(method);
+			}
+		}
+		this.methods = methodsList.toArray(new Method[methodsList.size()]);
+	}
 
 	public Benchmark enableDebugging() {
 		debug = true;
@@ -25,20 +38,8 @@ public class Benchmark {
 	}
 
 	/**
-	 * Add new scenario
-	 * 
-	 * @param name
-	 * @param code
-	 * @return
-	 */
-	public Benchmark add(final String name, final Code code) {
-		scenarios.add(new Scenario(name, code));
-		return this;
-	}
-
-	/**
 	 * Run the code for warming up.
-	 * 
+	 *
 	 * @param ntimes
 	 * @return
 	 * @throws Exception
@@ -46,9 +47,9 @@ public class Benchmark {
 	public Benchmark warmup(int ntimes) throws Exception {
 		System.out.println("Warm up: " + ntimes + "\n");
 
-		for (Scenario scenario : scenarios) {
+		for (Method method : methods) {
 			for (int i = 0; i < ntimes; ++i) {
-				scenario.code.run();
+				method.invoke(this);
 			}
 		}
 
@@ -58,8 +59,7 @@ public class Benchmark {
 
 	private Score measureEmptyLoop(long ntimes) throws Exception {
 		if (!emptyLoopCache.containsKey(ntimes)) {
-			Score empty = this.runloop(ntimes, () -> {
-			});
+			Score empty = this.runloop(ntimes, Benchmark.class.getMethod("emptyMethod"));
 			emptyLoopCache.put(ntimes, empty);
 			return empty;
 		} else {
@@ -68,18 +68,21 @@ public class Benchmark {
 		}
 	}
 
+	public static void emptyMethod() {
+	}
+
 	/**
 	 * Run all scenarios.
-	 * 
+	 *
 	 * @param ntimes
 	 * @return
 	 * @throws Exception
 	 */
 	public Result run(int ntimes) throws Exception {
 		List<ScenarioResult> results = new ArrayList<>();
-		for (Scenario scenario : scenarios) {
-			Score t = timeit(ntimes, scenario.code);
-			results.add(new ScenarioResult(scenario.title, t));
+		for (Method method : this.methods) {
+			Score t = timeit(ntimes, method);
+			results.add(new ScenarioResult(method.getName(), t));
 		}
 
 		return new Result(results);
@@ -87,10 +90,10 @@ public class Benchmark {
 
 	public Result runByTime(double d) throws Exception {
 		List<ScenarioResult> results = new ArrayList<>();
-		for (Scenario scenario : scenarios) {
-			DEBUG("Running " + scenario.title);
-			Score t = countit(d, scenario.code);
-			results.add(new ScenarioResult(scenario.title, t));
+		for (Method method : methods) {
+			DEBUG("Running " + method.getName());
+			Score t = countit(d, method);
+			results.add(new ScenarioResult(method.getName(), t));
 		}
 
 		return new Result(results);
@@ -105,29 +108,34 @@ public class Benchmark {
 
 	/**
 	 * Clear the cached time for COUNT rounds of the null loop.
+	 * @param ntimes
 	 */
 	public void clearCache(int ntimes) {
 		emptyLoopCache.remove(ntimes);
 	}
 
 	/**
-	 * <i>ntimes</i> is the number of times to run the loop, and <i>code</i> is
-	 * the code to run. <i>code</i> may be either a code reference or a string
-	 * to be eval'd; either way it will be run in the caller's package.
-	 * 
+	 * <i>ntimes</i> is the number of times to run the loop, and <i>code</i> is the code to run.
+	 * <i>code</i> may be either a code reference or a string to be eval'd; either way it will be
+	 * run in the caller's package.
+	 *
 	 * @param ntimes
-	 * @param code
-	 * @return elapsed time in nano second
+	 * @param method
+	 * @return elapsed time in nanoseconds
 	 * @throws Exception
 	 */
-	public Score timeit(long ntimes, Code code) throws Exception {
+	public Score timeit(long ntimes, Method method) throws Exception {
 		Score empty = this.measureEmptyLoop(ntimes);
-		Score score = this.runloop(ntimes, code);
+		Score score = this.runloop(ntimes, method);
 
 		return score.diff(empty);
 	}
+	
+	public Score countit(double tmax, String methodName) throws Exception {
+		return this.countit(tmax, this.getClass().getMethod(methodName));
+	}
 
-	public Score countit(double tmax, Code code) throws Exception {
+	public Score countit(double tmax, Method method) throws Exception {
 		if (tmax < 0.1) {
 			throw new IllegalArgumentException(
 					"timelimit cannot be less than '0.1'.");
@@ -140,14 +148,14 @@ public class Benchmark {
 		for (;; n *= 2) {
 			DEBUG("Finding minimum n: " + n);
 
-			Score td = timeit(n, code);
+			Score td = timeit(n, method);
 			tc = (double) td.cputime / 1_000_000_000.0;
 			DEBUG(String.format("TC: %.8f", tc));
 			if (tc <= 0.01 && n > 1024) {
 				if (++zeros > 16) {
 					throw new RuntimeException(
 							"Timing is consistently zero in estimation loop, cannot benchmark. N="
-									+ n);
+							+ n);
 				}
 			} else {
 				zeros = 0;
@@ -171,7 +179,7 @@ public class Benchmark {
 			 * accuracy since we're not counting these times.
 			 */
 			n = (int) (tpra * 1.05 * n / tc); // Linear approximation.
-			Score td = timeit(n, code);
+			Score td = timeit(n, method);
 			double new_tc = td.cputime / 1_000_000_000.0;
 			// Make sure we are making progress.
 			tc = new_tc > 1.2 * tc ? new_tc : 1.2 * tc;
@@ -187,7 +195,7 @@ public class Benchmark {
 		n = (int) (n * (1.05 * tmax / tc));
 		zeros = 0;
 		while (true) {
-			Score td = timeit(n, code);
+			Score td = timeit(n, method);
 			result = result.add(td);
 			if ((result.cputime / 1_000_000_000.0) >= tmax) {
 				break;
@@ -197,7 +205,7 @@ public class Benchmark {
 
 					throw new RuntimeException(
 							"Timing is consistently zero in estimation loop, cannot benchmark. N="
-									+ n);
+							+ n);
 				}
 			} else {
 				zeros = 0;
@@ -206,7 +214,7 @@ public class Benchmark {
 				result.cputime = 10_000_000;
 			}
 			double r = tmax / (result.cputime / 1_000_000_000.0) - 1; // Linear
-																		// approximation.
+			// approximation.
 			n = (int) (r * result.iters);
 			if (n < nmin) {
 				n = nmin;
@@ -221,7 +229,7 @@ public class Benchmark {
 		}
 	}
 
-	private Score runloop(long ntimes, Code code) throws Exception {
+	private Score runloop(long ntimes, Method method) throws Exception {
 		System.gc();
 		System.runFinalization();
 
@@ -230,7 +238,7 @@ public class Benchmark {
 		long usertime1 = this.getUserTime();
 		long systemtime1 = this.getSystemTime();
 		for (int i = 0; i < ntimes; ++i) {
-			code.run();
+			method.invoke(this);
 		}
 		long real2 = System.nanoTime();
 		long cputime2 = this.getCpuTime();
@@ -317,22 +325,30 @@ public class Benchmark {
 		}
 	}
 
-	/** Get CPU time in nanoseconds. */
+	/**
+	 * Get CPU time in nanoseconds.
+	 */
 	public long getCpuTime() {
 		ThreadMXBean bean = ManagementFactory.getThreadMXBean();
 		return bean.isCurrentThreadCpuTimeSupported() ? bean
 				.getCurrentThreadCpuTime() : 0L;
 	}
 
-	/** Get user time in nanoseconds. */
-	public long getUserTime() {
+	/**
+	 * Get user time in nanosecond
+	 *
+	 * @return
+	 */
+	long getUserTime() {
 		ThreadMXBean bean = ManagementFactory.getThreadMXBean();
 		return bean.isCurrentThreadCpuTimeSupported() ? bean
 				.getCurrentThreadUserTime() : 0L;
 	}
 
-	/** Get system time in nanoseconds. */
-	public long getSystemTime() {
+	/**
+	 * Get system time in nanoseconds.
+	 */
+	long getSystemTime() {
 		ThreadMXBean bean = ManagementFactory.getThreadMXBean();
 		return bean.isCurrentThreadCpuTimeSupported() ? (bean
 				.getCurrentThreadCpuTime() - bean.getCurrentThreadUserTime())
@@ -340,6 +356,7 @@ public class Benchmark {
 	}
 
 	public static class Result {
+
 		private final List<ScenarioResult> results;
 
 		public Result(List<ScenarioResult> results) {
@@ -356,11 +373,10 @@ public class Benchmark {
 		}
 
 		/**
-		 * [ '', 'Rate', 'b', 'a' ], [ 'b', '2885232/s', '--', '-59%' ], [ 'a',
-		 * '7099126/s', '146%', '--' ],
-		 * 
+		 * [ '', 'Rate', 'b', 'a' ], [ 'b', '2885232/s', '--', '-59%' ], [ 'a', '7099126/s', '146%',
+		 * '--' ],
+		 *
 		 * @return
-		 * @throws IOException
 		 */
 		public Result cmpthese() {
 			System.out.println("\nComparison chart:\n");
@@ -375,9 +391,9 @@ public class Benchmark {
 			List<String> headerRow = new ArrayList<>();
 			headerRow.add("");
 			headerRow.add("Rate");
-			results.stream().forEach(result -> {
+			for (ScenarioResult result: results) {
 				headerRow.add(result.title);
-			});
+			}
 			rows.add(headerRow);
 
 			for (ScenarioResult result : results) {
@@ -391,7 +407,7 @@ public class Benchmark {
 					} else {
 						row.add(String.format("%.0f%%",
 								100 * result.score.rate() / col.score.rate()
-										- 100));
+								- 100));
 					}
 				}
 				rows.add(row);
@@ -401,18 +417,23 @@ public class Benchmark {
 
 		public String renderTable(List<List<String>> rows) {
 			StringBuilder buffer = new StringBuilder();
-			List<Integer> cols = new ArrayList<>();
+			List<Integer> colSizes = new ArrayList<>(rows.get(0).size());
 			for (int x = 0; x < rows.get(0).size(); ++x) {
-				final int xx = x;
-				cols.add(IntStream.range(0, rows.size()).mapToObj(y -> {
-					return rows.get(y);
-				}).mapToInt(row -> row.get(xx).length()).max().getAsInt());
+				colSizes.add(1); // fill initial values.
+			}
+			for (int x = 0; x < rows.get(0).size(); ++x) {
+				for (int y=0; y<rows.size(); ++y) {
+					List<String> row = rows.get(y);
+					String col = row.get(x);
+					colSizes.set(x, Math.max(colSizes.get(x), col.length()));
+					Integer currentX = colSizes.get(x);
+				}
 			}
 
 			for (int y = 0; y < rows.size(); ++y) {
 				List<String> row = rows.get(y);
 				for (int x = 0; x < row.size(); ++x) {
-					buffer.append(String.format("  %" + cols.get(x) + "s",
+					buffer.append(String.format("  %" + colSizes.get(x) + "s",
 							row.get(x)));
 				}
 				buffer.append("\n");
@@ -422,6 +443,7 @@ public class Benchmark {
 	}
 
 	public static class ScenarioResult {
+
 		public final String title;
 		// in nanosec.
 		public final Score score;
@@ -437,23 +459,4 @@ public class Benchmark {
 		}
 	}
 
-	public static class Scenario {
-		@Override
-		public String toString() {
-			return "Scenario [title=" + title + ", code=" + code + "]";
-		}
-
-		public final String title;
-		public final Code code;
-
-		public Scenario(String title, Code code) {
-			this.title = title;
-			this.code = code;
-		}
-	};
-
-	@FunctionalInterface
-	public static interface Code {
-		void run() throws Exception;
-	}
 }

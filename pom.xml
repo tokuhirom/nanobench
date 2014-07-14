@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>me.geso</groupId>
 	<artifactId>nanobench</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.3-SNAPSHOT</version>
 	<name>nanobench</name>
 	<description>Tiny benchmarking framework for Java 8</description>
 
@@ -12,6 +12,23 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>
+
+	<scm>
+		<url>https://github.com/tokuhirom/nanobench/</url>
+		<connection>scm:git:git://github.com/tokuhirom/nanobench.git</connection>
+		<developerConnection>scm:git:git@github.com:tokuhirom/nanobench.git</developerConnection>
+	</scm>
+
+	<distributionManagement>
+		<repository>
+			<id>repo</id>
+			<url>https://github.com/tokuhirom/maven/raw/master/releases</url>
+		</repository>
+		<snapshotRepository>
+			<id>snapshot-repo</id>
+			<url>https://github.com/tokuhirom/maven/raw/master/snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
 
 	<dependencies>
 		<dependency>
@@ -28,8 +45,8 @@
 				<plugin>
 					<artifactId>maven-compiler-plugin</artifactId>
 					<configuration>
-						<source>1.8</source>
-						<target>1.8</target>
+						<source>1.7</source>
+						<target>1.7</target>
 						<encoding>UTF-8</encoding>
 					</configuration>
 				</plugin>

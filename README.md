@@ -6,57 +6,56 @@ This is a tiny benchmarking library for Java 8.
 ## SYNOPSIS
 
 ```
+
 package me.geso.microbenchmarks;
 
 import me.geso.nanobench.Benchmark;
 
 import org.apache.commons.lang3.StringEscapeUtils;
-import org.junit.Test;
 import org.springframework.web.util.HtmlUtils;
 
 import com.google.common.html.HtmlEscapers;
 
-public class HTMLEscape {
-	@Test
-	public void testHTMLEscape() throws Exception {
-		final String src = "<><><><>&&&&;;;;jl2kjlnnfljflksdjfuowu-9urjnl321knl;fu3poifuokbkvnl;uigufjslfjadsipuru1o2krn;lkmfzkjhvojopijkJ:LJKU)!*)($J!KLJOIFHS)JPJ";
+public class HTMLEscapeBenchmark extends Benchmark {
 
-		new Benchmark()
-				.add("guava", () -> {
-					HtmlEscapers.htmlEscaper().escape(src);
-				})
-				.add("commons", () -> {
-					StringEscapeUtils.escapeHtml4(src);
-				})
-				.add("String.replace",
-						() -> {
-							src.replace("&", "&amp;").replace(">", "&gt;")
-									.replace("<", "&lt;")
-									.replace("'", "&apos;")
-									.replaceAll("\"", "&quot;");
-						}).add("Spring", () -> {
-					HtmlUtils.htmlEscape(src);
-				}).runByTime(1).timethese().cmpthese();
+	final String src = "<><><><>&&&&;;;;jl2kjlnnfljflksdjfuowu-9urjnl321knl;fu3poifuokbkvnl;uigufjslfjadsipuru1o2krn;lkmfzkjhvojopijkJ:LJKU)!*)($J!KLJOIFHS)JPJ";
+
+	public static void main(String[] args) throws Exception {
+		new HTMLEscapeBenchmark().runByTime(1).timethese().cmpthese();
+	}
+
+	public void benchGuava() {
+		HtmlEscapers.htmlEscaper().escape(src);
+	}
+
+	public void benchApacheCommons() {
+		StringEscapeUtils.escapeHtml4(src);
+	}
+
+	public void benchStringReplace() {
+		src.replace("&", "&amp;").replace(">", "&gt;")
+				.replace("<", "&lt;")
+				.replace("'", "&apos;")
+				.replaceAll("\"", "&quot;");
 	}
 }
 ```
 
 Output:
 ```
+
 Score:
 
-guava:  1 wallclock secs ( 1.14 usr +  0.06 sys =  1.20 CPU) @ 972828.08/s (n=1168278)
-commons:  1 wallclock secs ( 1.07 usr +  0.00 sys =  1.08 CPU) @ 39361.53/s (n=42403)
-String.replace:  1 wallclock secs ( 1.07 usr +  0.01 sys =  1.08 CPU) @ 61647.92/s (n=66395)
-Spring:  1 wallclock secs ( 1.02 usr +  0.00 sys =  1.03 CPU) @ 878340.23/s (n=901452)
+benchStringReplace:  1 wallclock secs ( 1.06 usr +  0.01 sys =  1.07 CPU) @ 121899.35/s (n=131034)
+benchGuava:  1 wallclock secs ( 1.01 usr +  0.00 sys =  1.01 CPU) @ 2416464.32/s (n=2451143)
+benchApacheCommons:  1 wallclock secs ( 1.08 usr +  0.00 sys =  1.08 CPU) @ 86865.32/s (n=93920)
 
 Comparison chart:
 
-                      Rate  guava  commons  String.replace  Spring
-           guava  972828/s     --    2372%           1478%     11%
-         commons   39362/s   -96%       --            -36%    -96%
-  String.replace   61648/s   -94%      57%              --    -93%
-          Spring  878340/s   -10%    2131%           1325%      --
+                           Rate  benchStringReplace  benchGuava  benchApacheCommons
+  benchStringReplace   121899/s                  --        -95%                 40%
+          benchGuava  2416464/s               1882%          --               2682%
+  benchApacheCommons    86865/s                -29%        -96%                  --
 ```
 
 ## DESCRIPTION

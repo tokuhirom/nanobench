@@ -1,103 +1,153 @@
 package me.geso.nanobench;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import me.geso.nanobench.Benchmark;
-
 import org.junit.Test;
 
 public class BenchmarkTest {
 
 	@Test
 	public void test() throws Exception {
-		final int inner = 100000;
-		new Benchmark().add("StringBuilder", () -> {
+		new StringBuilderBenchmark().warmup(10).run(100).timethese().cmpthese();
+	}
+
+	static class StringBuilderBenchmark extends Benchmark {
+
+		static final int inner = 100000;
+
+		public static void benchStringBuilder() {
 			StringBuilder builder = new StringBuilder();
-			IntStream.rangeClosed(0, inner).forEach(i -> {
+			for (int i = 0; i < inner; ++i) {
 				builder.append("AAAAA");
-			});
+			}
 			builder.toString();
-		}).add("StringBuffer", () -> {
+		}
+
+		@SuppressWarnings("StringBufferMayBeStringBuilder")
+		public static void benchStringBuffer() {
 			StringBuffer buffer = new StringBuffer();
-			IntStream.rangeClosed(0, inner).forEach(i -> {
+			for (int i = 0; i < inner; ++i) {
 				buffer.append("AAAAA");
-			});
+			}
 			buffer.toString();
-		}).add("String.concat", () -> {
+		}
+
+		public static void benchStringConcat() {
 			String buffer = new String();
-			IntStream.rangeClosed(0, inner).forEach(i -> {
+			for (int i = 0; i < inner; ++i) {
 				buffer.concat("AAAAA");
-			});
+			}
 			buffer.toString();
-		}).warmup(10).run(100).timethese().cmpthese();
+		}
 	}
 
 	@Test
 	public void testRandom() throws Exception {
-		Random random = new Random();
-		new Benchmark().add("Random.doubles", () -> {
-			random.nextDouble();
-		}).add("Math.random", () -> {
-			Math.random();
-		}).warmup(10).run(100000).timethese().cmpthese();
+		new MathRandomBench().warmup(10).run(100000).timethese().cmpthese();
 	}
 
 	@Test
 	public void testForEach() throws Exception {
-		List<Integer> list = IntStream.range(0, 10000).mapToObj(i -> i)
-				.collect(Collectors.toList());
-		new Benchmark().add("extended for", () -> {
+		new SumBenchmark().warmup(10).run(100000).timethese().cmpthese();
+	}
+
+	class SumBenchmark extends Benchmark {
+
+		List<Integer> list = rangeList(0, 10000);
+
+		public void benchExtendedFor() {
 			@SuppressWarnings("unused")
 			int s = 0;
 			for (Integer i : list) {
 				s += i;
 			}
-		}).add("stream", () -> {
-			list.stream().mapToInt(i -> i).sum();
-		}).warmup(10).run(100000).timethese().cmpthese();
+		}
+	}
+	
+	public List<Integer> rangeList(int min, int max) {
+		List<Integer> list = new ArrayList<>(max - min);
+		for (int i=min; i<max; ++i) {
+			list.add(i);
+		}
+		return list;
 	}
 
 	@Test
 	public void testSleep() throws Exception {
-		new Benchmark().add("Sleep 10msec", () -> {
+		new SleepBenchmark().warmup(0).run(100).timethese().cmpthese();
+	}
+
+	class SleepBenchmark extends Benchmark {
+
+		public void benchSleep10msec() throws InterruptedException {
 			Thread.sleep(10);
-		}).add("Sleep 100msec", () -> {
+		}
+
+		public void benchSleep100msec() throws InterruptedException {
 			Thread.sleep(100);
-		}).warmup(0).run(100).timethese().cmpthese();
+		}
 	}
 
 	@Test
 	public void testCountIt() throws Exception {
-		new Benchmark().countit(1, () -> {
+		new MathRandomBench().countit(1, "benchMathRandom");
+	}
+
+	class MathRandomBench extends Benchmark {
+
+		Random random = new Random();
+
+		public void benchMathRandom() {
 			Math.random();
-		});
+		}
+
+		public void benchRandomDoubles() {
+			random.nextDouble();
+		}
 	}
 
 	@SuppressWarnings("unused")
 	@Test
 	public void testCmpTheseNegative() throws Exception {
-		int[] ary = IntStream.range(0, 1_000_000).toArray();
-		List<Integer> list = IntStream.range(0, 1_000_000).mapToObj(i -> i)
-				.collect(Collectors.toList());
-		new Benchmark().add("array", () -> {
+		new ArrayListBenchmark().enableDebugging().warmup(1).runByTime(0.1).cmpthese()
+				.timethese();
+	}
+
+	class ArrayListBenchmark extends Benchmark {
+
+		final int[] ary;
+		final List<Integer> list;
+		
+		public ArrayListBenchmark() {
+			super();
+			
+			int size = 1000000;
+			this.list = new ArrayList<Integer>(size);
+			this.ary = new int[size];
+			for (int i=0; i<size; ++i) {
+				this.list.add(i);
+				this.ary[i] = i;
+			}
+		}
+
+		public void benchArray() {
 			for (int i = 0; i < 1000; ++i) {
 				int s = 0;
 				for (int a : ary) {
 					s += a;
 				}
 			}
-		}).add("list", () -> {
+		}
+
+		public void benchList() {
 			for (int i = 0; i < 1000; ++i) {
 				int s = 0;
 				for (int a : list) {
 					s += a;
 				}
 			}
-		}).enableDebugging().warmup(1).runByTime(0.1).cmpthese()
-				.timethese();
+		}
 	}
 
 }
