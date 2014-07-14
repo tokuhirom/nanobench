@@ -1,8 +1,11 @@
 package me.geso.nanobench;
 
+import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,15 +17,17 @@ import java.util.Map;
  * This is free software; you can redistribute it and/or modify it under the same terms as the Perl
  * 5 programming language system itself.
  */
-public abstract class Benchmark {
+public class Benchmark {
 
 	final Map<Long, Score> emptyLoopCache = new HashMap<>();
 	private boolean debug = false;
+	private final Object suite;
 
 	final Method[] methods;
 
-	public Benchmark() {
-		Method[] allMethods = this.getClass().getMethods();
+	public Benchmark(Object suite) {
+		this.suite = suite;
+		Method[] allMethods = suite.getClass().getMethods();
 		ArrayList<Method> methodsList = new ArrayList<>();
 		for (Method method : allMethods) {
 			if (method.getName().startsWith("bench")) {
@@ -30,6 +35,32 @@ public abstract class Benchmark {
 			}
 		}
 		this.methods = methodsList.toArray(new Method[methodsList.size()]);
+	}
+
+	public static void main(String[] args) throws Exception {
+		new CLI().run(args);
+	}
+
+	static class CLI {
+
+		public void run(String[] args) throws Exception {
+			if (args.length == 0) {
+				help();
+				return;
+			}
+
+			File f = new File(".");
+			URL[] cp = {f.toURI().toURL()};
+			URLClassLoader classLoader = new URLClassLoader(cp, ClassLoader.getSystemClassLoader());
+			Class<?> targetClass = classLoader.loadClass(args[0]);
+			Object suite = targetClass.newInstance();
+			Benchmark benchmark = new Benchmark(suite);
+			benchmark.runByTime(1).timethese().cmpthese();
+		}
+
+		public void help() {
+			System.out.println("Usage: java -jar nanobench.jar BenchmarkClass");
+		}
 	}
 
 	public Benchmark enableDebugging() {
@@ -49,7 +80,7 @@ public abstract class Benchmark {
 
 		for (Method method : methods) {
 			for (int i = 0; i < ntimes; ++i) {
-				method.invoke(this);
+				method.invoke(this.suite);
 			}
 		}
 
@@ -108,6 +139,7 @@ public abstract class Benchmark {
 
 	/**
 	 * Clear the cached time for COUNT rounds of the null loop.
+	 *
 	 * @param ntimes
 	 */
 	public void clearCache(int ntimes) {
@@ -116,8 +148,8 @@ public abstract class Benchmark {
 
 	/**
 	 * <i>ntimes</i> is the number of times to run the loop, and <i>code</i> is the code to run.
-	 * <i>code</i> may be either a code reference or a string to be eval'd; either way it will be
-	 * run in the caller's package.
+	 * <i>code</i> may be either a code reference or a string to be eval'd; either way it will be run
+	 * in the caller's package.
 	 *
 	 * @param ntimes
 	 * @param method
@@ -130,15 +162,15 @@ public abstract class Benchmark {
 
 		return score.diff(empty);
 	}
-	
+
 	public Score countit(double tmax, String methodName) throws Exception {
-		return this.countit(tmax, this.getClass().getMethod(methodName));
+		return this.countit(tmax, this.suite.getClass().getMethod(methodName));
 	}
 
 	public Score countit(double tmax, Method method) throws Exception {
 		if (tmax < 0.1) {
 			throw new IllegalArgumentException(
-					"timelimit cannot be less than '0.1'.");
+							"timelimit cannot be less than '0.1'.");
 		}
 
 		// First find the minimum $n that gives a significant timing.
@@ -154,8 +186,8 @@ public abstract class Benchmark {
 			if (tc <= 0.01 && n > 1024) {
 				if (++zeros > 16) {
 					throw new RuntimeException(
-							"Timing is consistently zero in estimation loop, cannot benchmark. N="
-							+ n);
+									"Timing is consistently zero in estimation loop, cannot benchmark. N="
+									+ n);
 				}
 			} else {
 				zeros = 0;
@@ -204,8 +236,8 @@ public abstract class Benchmark {
 				if (++zeros > 16) {
 
 					throw new RuntimeException(
-							"Timing is consistently zero in estimation loop, cannot benchmark. N="
-							+ n);
+									"Timing is consistently zero in estimation loop, cannot benchmark. N="
+									+ n);
 				}
 			} else {
 				zeros = 0;
@@ -238,7 +270,7 @@ public abstract class Benchmark {
 		long usertime1 = this.getUserTime();
 		long systemtime1 = this.getSystemTime();
 		for (int i = 0; i < ntimes; ++i) {
-			method.invoke(this);
+			method.invoke(this.suite);
 		}
 		long real2 = System.nanoTime();
 		long cputime2 = this.getCpuTime();
@@ -246,11 +278,11 @@ public abstract class Benchmark {
 		long systemtime2 = this.getSystemTime();
 
 		Score score = new Score(//
-				real2 - real1, //
-				cputime2 - cputime1, //
-				usertime2 - usertime1, //
-				systemtime2 - systemtime1, //
-				ntimes);
+						real2 - real1, //
+						cputime2 - cputime1, //
+						usertime2 - usertime1, //
+						systemtime2 - systemtime1, //
+						ntimes);
 
 		System.gc();
 		System.runFinalization();
@@ -267,7 +299,7 @@ public abstract class Benchmark {
 		public final long real;
 
 		public Score(long real, long cputime, long usertime, long systemtime,
-				long iters) {
+						long iters) {
 			this.real = real;
 			this.cputime = cputime;
 			this.usertime = usertime;
@@ -277,20 +309,20 @@ public abstract class Benchmark {
 
 		public Score add(Score other) {
 			return new Score( //
-					this.real + other.real, //
-					this.cputime + other.cputime, //
-					this.usertime + other.usertime, //
-					this.systemtime + other.systemtime, //
-					this.iters + other.iters);
+							this.real + other.real, //
+							this.cputime + other.cputime, //
+							this.usertime + other.usertime, //
+							this.systemtime + other.systemtime, //
+							this.iters + other.iters);
 		}
 
 		public Score diff(Score other) {
 			return new Score( //
-					Math.max(this.real - other.real, 0), //
-					Math.max(this.cputime - other.cputime, 0), //
-					Math.max(this.usertime - other.usertime, 0), //
-					Math.max(this.systemtime - other.systemtime, 0), //
-					this.iters);
+							Math.max(this.real - other.real, 0), //
+							Math.max(this.cputime - other.cputime, 0), //
+							Math.max(this.usertime - other.usertime, 0), //
+							Math.max(this.systemtime - other.systemtime, 0), //
+							this.iters);
 		}
 
 		public String format() {
@@ -299,15 +331,15 @@ public abstract class Benchmark {
 			long elapsed = usertime + systemtime;
 			StringBuilder builder = new StringBuilder();
 			builder.append(String.format(
-					"%2d wallclock secs (%5.2f usr + %5.2f sys = %5.2f CPU)",
-					(long) (real / 1_000_000_000.0),
-					(double) usertime / 1_000_000_000.0,
-					(double) systemtime / 1_000_000_000.0,
-					(double) cputime / 1_000_000_000.0));
+							"%2d wallclock secs (%5.2f usr + %5.2f sys = %5.2f CPU)",
+							(long) (real / 1_000_000_000.0),
+							(double) usertime / 1_000_000_000.0,
+							(double) systemtime / 1_000_000_000.0,
+							(double) cputime / 1_000_000_000.0));
 			if (elapsed > 0) {
 				builder.append(String.format(" @ %5.2f/s (n=%d)", //
-						(double) n / (elapsed / 1_000_000_000.0), //
-						n));
+								(double) n / (elapsed / 1_000_000_000.0), //
+								n));
 			}
 			return builder.toString();
 		}
@@ -320,7 +352,7 @@ public abstract class Benchmark {
 		public String formatRate() {
 			double rate = rate();
 			String format = rate >= 100 ? "%.0f" : rate >= 10 ? "%.1f"
-					: rate >= 1 ? "%.2f" : rate >= 0.1 ? "%.3f" : "%.2f";
+							: rate >= 1 ? "%.2f" : rate >= 0.1 ? "%.3f" : "%.2f";
 			return String.format(format + "/s", rate);
 		}
 	}
@@ -331,7 +363,7 @@ public abstract class Benchmark {
 	public long getCpuTime() {
 		ThreadMXBean bean = ManagementFactory.getThreadMXBean();
 		return bean.isCurrentThreadCpuTimeSupported() ? bean
-				.getCurrentThreadCpuTime() : 0L;
+						.getCurrentThreadCpuTime() : 0L;
 	}
 
 	/**
@@ -342,7 +374,7 @@ public abstract class Benchmark {
 	long getUserTime() {
 		ThreadMXBean bean = ManagementFactory.getThreadMXBean();
 		return bean.isCurrentThreadCpuTimeSupported() ? bean
-				.getCurrentThreadUserTime() : 0L;
+						.getCurrentThreadUserTime() : 0L;
 	}
 
 	/**
@@ -351,8 +383,8 @@ public abstract class Benchmark {
 	long getSystemTime() {
 		ThreadMXBean bean = ManagementFactory.getThreadMXBean();
 		return bean.isCurrentThreadCpuTimeSupported() ? (bean
-				.getCurrentThreadCpuTime() - bean.getCurrentThreadUserTime())
-				: 0L;
+						.getCurrentThreadCpuTime() - bean.getCurrentThreadUserTime())
+						: 0L;
 	}
 
 	public static class Result {
@@ -391,7 +423,7 @@ public abstract class Benchmark {
 			List<String> headerRow = new ArrayList<>();
 			headerRow.add("");
 			headerRow.add("Rate");
-			for (ScenarioResult result: results) {
+			for (ScenarioResult result : results) {
 				headerRow.add(result.title);
 			}
 			rows.add(headerRow);
@@ -406,8 +438,8 @@ public abstract class Benchmark {
 						row.add("--");
 					} else {
 						row.add(String.format("%.0f%%",
-								100 * result.score.rate() / col.score.rate()
-								- 100));
+										100 * result.score.rate() / col.score.rate()
+										- 100));
 					}
 				}
 				rows.add(row);
@@ -422,7 +454,7 @@ public abstract class Benchmark {
 				colSizes.add(1); // fill initial values.
 			}
 			for (int x = 0; x < rows.get(0).size(); ++x) {
-				for (int y=0; y<rows.size(); ++y) {
+				for (int y = 0; y < rows.size(); ++y) {
 					List<String> row = rows.get(y);
 					String col = row.get(x);
 					colSizes.set(x, Math.max(colSizes.get(x), col.length()));
@@ -434,7 +466,7 @@ public abstract class Benchmark {
 				List<String> row = rows.get(y);
 				for (int x = 0; x < row.size(); ++x) {
 					buffer.append(String.format("  %" + colSizes.get(x) + "s",
-							row.get(x)));
+									row.get(x)));
 				}
 				buffer.append("\n");
 			}

@@ -5,57 +5,45 @@ This is a tiny benchmarking library for Java 8.
 
 ## SYNOPSIS
 
+Benchmark code(ListBenchmark.java):
 ```
+import java.util.List;
+import java.util.ArrayList;
+import java.util.LinkedList;
 
-package me.geso.microbenchmarks;
+public class ListBenchmark {
+    public void benchArrayList() {
+        List<Integer> l = new ArrayList<>();
+        for (int i=0; i<1_000_000; ++i) {
+            l.add(i);
+        }
+    }
 
-import me.geso.nanobench.Benchmark;
-
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.springframework.web.util.HtmlUtils;
-
-import com.google.common.html.HtmlEscapers;
-
-public class HTMLEscapeBenchmark extends Benchmark {
-
-	final String src = "<><><><>&&&&;;;;jl2kjlnnfljflksdjfuowu-9urjnl321knl;fu3poifuokbkvnl;uigufjslfjadsipuru1o2krn;lkmfzkjhvojopijkJ:LJKU)!*)($J!KLJOIFHS)JPJ";
-
-	public static void main(String[] args) throws Exception {
-		new HTMLEscapeBenchmark().runByTime(1).timethese().cmpthese();
-	}
-
-	public void benchGuava() {
-		HtmlEscapers.htmlEscaper().escape(src);
-	}
-
-	public void benchApacheCommons() {
-		StringEscapeUtils.escapeHtml4(src);
-	}
-
-	public void benchStringReplace() {
-		src.replace("&", "&amp;").replace(">", "&gt;")
-				.replace("<", "&lt;")
-				.replace("'", "&apos;")
-				.replaceAll("\"", "&quot;");
-	}
+    public void benchLinkedList() {
+        List<Integer> l = new LinkedList<>();
+        for (int i=0; i<1_000_000; ++i) {
+            l.add(i);
+        }
+    }
 }
 ```
 
-Output:
+Command line:
 ```
+> javac ListBenchmark.java
+> java -jar nanobench.jar ListBenchmark
+
 
 Score:
 
-benchStringReplace:  1 wallclock secs ( 1.06 usr +  0.01 sys =  1.07 CPU) @ 121899.35/s (n=131034)
-benchGuava:  1 wallclock secs ( 1.01 usr +  0.00 sys =  1.01 CPU) @ 2416464.32/s (n=2451143)
-benchApacheCommons:  1 wallclock secs ( 1.08 usr +  0.00 sys =  1.08 CPU) @ 86865.32/s (n=93920)
+benchArrayList:  1 wallclock secs ( 1.03 usr +  0.10 sys =  1.13 CPU) @ 142.79/s (n=162)
+benchLinkedList:  2 wallclock secs ( 1.07 usr +  0.15 sys =  1.21 CPU) @ 146.54/s (n=178)
 
 Comparison chart:
 
-                           Rate  benchStringReplace  benchGuava  benchApacheCommons
-  benchStringReplace   121899/s                  --        -95%                 40%
-          benchGuava  2416464/s               1882%          --               2682%
-  benchApacheCommons    86865/s                -29%        -96%                  --
+                    Rate  benchArrayList  benchLinkedList
+   benchArrayList  143/s              --              -3%
+  benchLinkedList  147/s              3%               --
 ```
 
 ## DESCRIPTION
