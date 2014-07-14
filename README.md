@@ -54,6 +54,13 @@ nanobench is a tiny benchmarking library.
 This library is really tiny. There is no dependencies. Only one file.
 You can copy Benchmark.java into your project.
 
+## INSTALLATION
+
+You can get a jar file from github.
+
+https://github.com/tokuhirom/maven/tree/gh-pages/releases/me/geso/nanobench
+
+Also, you can get a jar by maven: [tokuhirom's maven repo](https://tokuhirom.github.io/maven/)
 
 ## LICENSE
 
