@@ -51,11 +51,12 @@ public class Benchmark {
 
 			File f = new File(".");
 			URL[] cp = {f.toURI().toURL()};
-			URLClassLoader classLoader = new URLClassLoader(cp, ClassLoader.getSystemClassLoader());
-			Class<?> targetClass = classLoader.loadClass(args[0]);
-			Object suite = targetClass.newInstance();
-			Benchmark benchmark = new Benchmark(suite);
-			benchmark.runByTime(1).timethese().cmpthese();
+			try (URLClassLoader classLoader = new URLClassLoader(cp, ClassLoader.getSystemClassLoader())) {
+				Class<?> targetClass = classLoader.loadClass(args[0]);
+				Object suite = targetClass.newInstance();
+				Benchmark benchmark = new Benchmark(suite);
+				benchmark.runByTime(1).timethese().cmpthese();
+			}
 		}
 
 		public void help() {
