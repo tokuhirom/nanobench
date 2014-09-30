@@ -19,7 +19,7 @@ import java.util.Map;
  */
 public class Benchmark {
 
-	final Map<Long, Score> emptyLoopCache = new HashMap<>();
+	private final Map<Long, Score> emptyLoopCache = new HashMap<>();
 	private boolean debug = false;
 	private final Object suite;
 
