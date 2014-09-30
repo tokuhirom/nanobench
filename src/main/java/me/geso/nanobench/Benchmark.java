@@ -14,8 +14,8 @@ import java.util.Map;
 /**
  * Copyright © 2014 Tokuhiro Matsuno, http://64p.org/ <tokuhirom@gmail.com>
  *
- * This is free software; you can redistribute it and/or modify it under the same terms as the Perl
- * 5 programming language system itself.
+ * This is free software; you can redistribute it and/or modify it under the
+ * same terms as the Perl 5 programming language system itself.
  */
 public class Benchmark {
 
@@ -50,8 +50,9 @@ public class Benchmark {
 			}
 
 			File f = new File(".");
-			URL[] cp = {f.toURI().toURL()};
-			try (URLClassLoader classLoader = new URLClassLoader(cp, ClassLoader.getSystemClassLoader())) {
+			URL[] cp = { f.toURI().toURL() };
+			try (URLClassLoader classLoader = new URLClassLoader(cp,
+					ClassLoader.getSystemClassLoader())) {
 				Class<?> targetClass = classLoader.loadClass(args[0]);
 				Object suite = targetClass.newInstance();
 				Benchmark benchmark = new Benchmark(suite);
@@ -91,7 +92,8 @@ public class Benchmark {
 
 	private Score measureEmptyLoop(long ntimes) throws Exception {
 		if (!emptyLoopCache.containsKey(ntimes)) {
-			Score empty = this.runloop(ntimes, Benchmark.class.getMethod("emptyMethod"));
+			Score empty = this.runloop(ntimes,
+					Benchmark.class.getMethod("emptyMethod"));
 			emptyLoopCache.put(ntimes, empty);
 			return empty;
 		} else {
@@ -143,14 +145,24 @@ public class Benchmark {
 	 *
 	 * @param ntimes
 	 */
+	public void clearCache(long ntimes) {
+		emptyLoopCache.remove(ntimes);
+	}
+
+	/**
+	 * Use long argument instead.
+	 * 
+	 * @param ntimes
+	 */
+	@Deprecated
 	public void clearCache(int ntimes) {
 		emptyLoopCache.remove(ntimes);
 	}
 
 	/**
-	 * <i>ntimes</i> is the number of times to run the loop, and <i>code</i> is the code to run.
-	 * <i>code</i> may be either a code reference or a string to be eval'd; either way it will be run
-	 * in the caller's package.
+	 * <i>ntimes</i> is the number of times to run the loop, and <i>code</i> is
+	 * the code to run. <i>code</i> may be either a code reference or a string
+	 * to be eval'd; either way it will be run in the caller's package.
 	 *
 	 * @param ntimes
 	 * @param method
@@ -171,7 +183,7 @@ public class Benchmark {
 	public Score countit(double tmax, Method method) throws Exception {
 		if (tmax < 0.1) {
 			throw new IllegalArgumentException(
-							"timelimit cannot be less than '0.1'.");
+					"timelimit cannot be less than '0.1'.");
 		}
 
 		// First find the minimum $n that gives a significant timing.
@@ -187,7 +199,7 @@ public class Benchmark {
 			if (tc <= 0.01 && n > 1024) {
 				if (++zeros > 16) {
 					throw new RuntimeException(
-									"Timing is consistently zero in estimation loop, cannot benchmark. N="
+							"Timing is consistently zero in estimation loop, cannot benchmark. N="
 									+ n);
 				}
 			} else {
@@ -237,7 +249,7 @@ public class Benchmark {
 				if (++zeros > 16) {
 
 					throw new RuntimeException(
-									"Timing is consistently zero in estimation loop, cannot benchmark. N="
+							"Timing is consistently zero in estimation loop, cannot benchmark. N="
 									+ n);
 				}
 			} else {
@@ -279,11 +291,11 @@ public class Benchmark {
 		long systemtime2 = this.getSystemTime();
 
 		Score score = new Score(//
-						real2 - real1, //
-						cputime2 - cputime1, //
-						usertime2 - usertime1, //
-						systemtime2 - systemtime1, //
-						ntimes);
+				real2 - real1, //
+				cputime2 - cputime1, //
+				usertime2 - usertime1, //
+				systemtime2 - systemtime1, //
+				ntimes);
 
 		System.gc();
 		System.runFinalization();
@@ -300,7 +312,7 @@ public class Benchmark {
 		public final long real;
 
 		public Score(long real, long cputime, long usertime, long systemtime,
-						long iters) {
+				long iters) {
 			this.real = real;
 			this.cputime = cputime;
 			this.usertime = usertime;
@@ -310,20 +322,20 @@ public class Benchmark {
 
 		public Score add(Score other) {
 			return new Score( //
-							this.real + other.real, //
-							this.cputime + other.cputime, //
-							this.usertime + other.usertime, //
-							this.systemtime + other.systemtime, //
-							this.iters + other.iters);
+					this.real + other.real, //
+					this.cputime + other.cputime, //
+					this.usertime + other.usertime, //
+					this.systemtime + other.systemtime, //
+					this.iters + other.iters);
 		}
 
 		public Score diff(Score other) {
 			return new Score( //
-							Math.max(this.real - other.real, 0), //
-							Math.max(this.cputime - other.cputime, 0), //
-							Math.max(this.usertime - other.usertime, 0), //
-							Math.max(this.systemtime - other.systemtime, 0), //
-							this.iters);
+					Math.max(this.real - other.real, 0), //
+					Math.max(this.cputime - other.cputime, 0), //
+					Math.max(this.usertime - other.usertime, 0), //
+					Math.max(this.systemtime - other.systemtime, 0), //
+					this.iters);
 		}
 
 		public String format() {
@@ -332,15 +344,15 @@ public class Benchmark {
 			long elapsed = usertime + systemtime;
 			StringBuilder builder = new StringBuilder();
 			builder.append(String.format(
-							"%2d wallclock secs (%5.2f usr + %5.2f sys = %5.2f CPU)",
-							(long) (real / 1_000_000_000.0),
-							(double) usertime / 1_000_000_000.0,
-							(double) systemtime / 1_000_000_000.0,
-							(double) cputime / 1_000_000_000.0));
+					"%2d wallclock secs (%5.2f usr + %5.2f sys = %5.2f CPU)",
+					(long) (real / 1_000_000_000.0),
+					(double) usertime / 1_000_000_000.0,
+					(double) systemtime / 1_000_000_000.0,
+					(double) cputime / 1_000_000_000.0));
 			if (elapsed > 0) {
 				builder.append(String.format(" @ %5.2f/s (n=%d)", //
-								(double) n / (elapsed / 1_000_000_000.0), //
-								n));
+						(double) n / (elapsed / 1_000_000_000.0), //
+						n));
 			}
 			return builder.toString();
 		}
@@ -353,7 +365,7 @@ public class Benchmark {
 		public String formatRate() {
 			double rate = rate();
 			String format = rate >= 100 ? "%.0f" : rate >= 10 ? "%.1f"
-							: rate >= 1 ? "%.2f" : rate >= 0.1 ? "%.3f" : "%.2f";
+					: rate >= 1 ? "%.2f" : rate >= 0.1 ? "%.3f" : "%.2f";
 			return String.format(format + "/s", rate);
 		}
 	}
@@ -364,7 +376,7 @@ public class Benchmark {
 	public long getCpuTime() {
 		ThreadMXBean bean = ManagementFactory.getThreadMXBean();
 		return bean.isCurrentThreadCpuTimeSupported() ? bean
-						.getCurrentThreadCpuTime() : 0L;
+				.getCurrentThreadCpuTime() : 0L;
 	}
 
 	/**
@@ -375,7 +387,7 @@ public class Benchmark {
 	long getUserTime() {
 		ThreadMXBean bean = ManagementFactory.getThreadMXBean();
 		return bean.isCurrentThreadCpuTimeSupported() ? bean
-						.getCurrentThreadUserTime() : 0L;
+				.getCurrentThreadUserTime() : 0L;
 	}
 
 	/**
@@ -384,8 +396,8 @@ public class Benchmark {
 	long getSystemTime() {
 		ThreadMXBean bean = ManagementFactory.getThreadMXBean();
 		return bean.isCurrentThreadCpuTimeSupported() ? (bean
-						.getCurrentThreadCpuTime() - bean.getCurrentThreadUserTime())
-						: 0L;
+				.getCurrentThreadCpuTime() - bean.getCurrentThreadUserTime())
+				: 0L;
 	}
 
 	public static class Result {
@@ -406,8 +418,8 @@ public class Benchmark {
 		}
 
 		/**
-		 * [ '', 'Rate', 'b', 'a' ], [ 'b', '2885232/s', '--', '-59%' ], [ 'a', '7099126/s', '146%',
-		 * '--' ],
+		 * [ '', 'Rate', 'b', 'a' ], [ 'b', '2885232/s', '--', '-59%' ], [ 'a',
+		 * '7099126/s', '146%', '--' ],
 		 *
 		 * @return
 		 */
@@ -439,7 +451,7 @@ public class Benchmark {
 						row.add("--");
 					} else {
 						row.add(String.format("%.0f%%",
-										100 * result.score.rate() / col.score.rate()
+								100 * result.score.rate() / col.score.rate()
 										- 100));
 					}
 				}
@@ -467,7 +479,7 @@ public class Benchmark {
 				List<String> row = rows.get(y);
 				for (int x = 0; x < row.size(); ++x) {
 					buffer.append(String.format("  %" + colSizes.get(x) + "s",
-									row.get(x)));
+							row.get(x)));
 				}
 				buffer.append("\n");
 			}
