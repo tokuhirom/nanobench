@@ -3,6 +3,7 @@ package me.geso.nanobench;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
 import org.junit.Test;
 
 public class BenchmarkTest {
@@ -24,7 +25,6 @@ public class BenchmarkTest {
 			builder.toString();
 		}
 
-		@SuppressWarnings("StringBufferMayBeStringBuilder")
 		public static void benchStringBuffer() {
 			StringBuffer buffer = new StringBuffer();
 			for (int i = 0; i < inner; ++i) {
@@ -107,7 +107,6 @@ public class BenchmarkTest {
 		}
 	}
 
-	@SuppressWarnings("unused")
 	@Test
 	public void testCmpTheseNegative() throws Exception {
 		new Benchmark(new ArrayListBenchmark()).enableDebugging().warmup(1).runByTime(0.1).cmpthese()
@@ -130,6 +129,7 @@ public class BenchmarkTest {
 			}
 		}
 
+		@SuppressWarnings("unused")
 		public void benchArray() {
 			for (int i = 0; i < 1000; ++i) {
 				int s = 0;
@@ -139,6 +139,7 @@ public class BenchmarkTest {
 			}
 		}
 
+		@SuppressWarnings("unused")
 		public void benchList() {
 			for (int i = 0; i < 1000; ++i) {
 				int s = 0;

@@ -459,7 +459,7 @@ public class Benchmark {
 					List<String> row = rows.get(y);
 					String col = row.get(x);
 					colSizes.set(x, Math.max(colSizes.get(x), col.length()));
-					Integer currentX = colSizes.get(x);
+					// Integer currentX = colSizes.get(x);
 				}
 			}
 
