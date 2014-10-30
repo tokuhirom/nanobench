@@ -17,7 +17,7 @@
 		<url>https://github.com/tokuhirom/nanobench/</url>
 		<connection>scm:git:git://github.com/tokuhirom/nanobench.git</connection>
 		<developerConnection>scm:git:git@github.com:tokuhirom/nanobench.git</developerConnection>
-	  <tag>nanobench-0.0.6</tag>
+	  <tag>nanobench-0.1.0</tag>
   </scm>
 
     <developers>
