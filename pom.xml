@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>me.geso</groupId>
 	<artifactId>nanobench</artifactId>
-	<version>0.1.0</version>
+	<version>0.1.1-SNAPSHOT</version>
 	<name>nanobench</name>
 	<description>Tiny benchmarking framework for Java 7+</description>
 	<url>http://github.com/tokuhirom/nanobench</url>
