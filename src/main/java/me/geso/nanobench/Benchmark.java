@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Copyright © 2014 Tokuhiro Matsuno, http://64p.org/ <tokuhirom@gmail.com>
+ * Copyright © 2014 Tokuhiro Matsuno, http://64p.org/
  *
  * This is free software; you can redistribute it and/or modify it under the
  * same terms as the Perl 5 programming language system itself.
