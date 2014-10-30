@@ -150,16 +150,6 @@ public class Benchmark {
 	}
 
 	/**
-	 * Use long argument instead.
-	 * 
-	 * @param ntimes
-	 */
-	@Deprecated
-	public void clearCache(int ntimes) {
-		emptyLoopCache.remove(ntimes);
-	}
-
-	/**
 	 * <i>ntimes</i> is the number of times to run the loop, and <i>code</i> is
 	 * the code to run. <i>code</i> may be either a code reference or a string
 	 * to be eval'd; either way it will be run in the caller's package.
