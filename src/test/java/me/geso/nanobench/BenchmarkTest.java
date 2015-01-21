@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import me.geso.nanobench.Benchmark.Bench;
+
 import org.junit.Test;
 
 public class BenchmarkTest {
@@ -150,4 +152,20 @@ public class BenchmarkTest {
 		}
 	}
 
+	@Test
+	public void testSleepWithAnnotation() throws Exception {
+		new Benchmark(new SleepBenchmarkWithAnnotation()).warmup(0).run(100).timethese().cmpthese();
+	}
+
+	class SleepBenchmarkWithAnnotation {
+		@Bench
+		public void sleep10msec() throws InterruptedException {
+			Thread.sleep(10);
+		}
+
+		@Bench
+		public void sleep100msec() throws InterruptedException {
+			Thread.sleep(100);
+		}
+	}
 }
