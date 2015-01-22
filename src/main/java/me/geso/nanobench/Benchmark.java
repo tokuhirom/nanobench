@@ -1,6 +1,10 @@
 package me.geso.nanobench;
 
 import java.io.File;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
@@ -30,7 +34,7 @@ public class Benchmark {
 		Method[] allMethods = suite.getClass().getMethods();
 		ArrayList<Method> methodsList = new ArrayList<>();
 		for (Method method : allMethods) {
-			if (method.getName().startsWith("bench")) {
+			if (method.getName().startsWith("bench") || method.isAnnotationPresent(Bench.class)) {
 				methodsList.add(method);
 			}
 		}
@@ -494,4 +498,12 @@ public class Benchmark {
 		}
 	}
 
+	/**
+	 * The {@code Bench} annotation tells nanobench that the {@code public} method
+	 * to which it is attached can be run as a benchmark target.
+	 */
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target(ElementType.METHOD)
+	public @interface Bench {
+	}
 }
