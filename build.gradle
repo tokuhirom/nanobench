@@ -1,0 +1,108 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: "signing"
+
+group = 'me.geso'
+version = '0.2.1-SNAPSHOT'
+
+description = """nanobench"""
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+// set build variables based on build type (release, continuous integration, development)
+def isDevBuild
+def isReleaseBuild
+def sonatypeRepositoryUrl
+if (hasProperty("release")) {
+    isReleaseBuild = true
+    sonatypeRepositoryUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+} else if (hasProperty("ci")) {
+    version += "-SNAPSHOT"
+    sonatypeRepositoryUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
+} else {
+    isDevBuild = true
+    version += "-SNAPSHOT"
+}
+
+signing {
+    required { isReleaseBuild }
+    sign configurations.archives
+}
+
+uploadArchives {
+    repositories {
+        if (isDevBuild) {
+            mavenLocal()
+        }
+        else {
+            mavenDeployer {
+                if(isReleaseBuild) {
+                    beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+                }
+
+                repository(url: sonatypeRepositoryUrl) {
+                    authentication(userName: sonatypeUsername, password: sonatypePassword)
+                }
+
+                pom.project {
+                    name 'nanobench'
+                    packaging 'jar'
+                    description 'nanobench'
+                    url 'https://github.com/tokuhirom/nanobench'
+
+                    scm {
+                        url "scm:git@github.com:tokuhirom/nanobench.git"
+                        connection "scm:git@github.com:tokuhirom/nanobench.git"
+                        developerConnection "scm:git@github.com:tokuhirom/nanobench.git"
+                    }
+                    licenses {
+                        license {
+                            name 'MIT'
+                            url 'https://opensource.org/licenses/MIT'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id 'tokuhirom'
+                            name 'Tokuhiro Matsuno'
+                            email 'tokuhirom@gmail.com'
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+repositories {
+    mavenCentral();
+}
+
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from "${buildDir}/javadoc"
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+compileJava {
+    options.compilerArgs << '-XDignore.symbol.file' << '-Xlint:all'
+}
+
+artifacts {
+    archives javadocJar, sourcesJar
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version:'4.11'
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.12'
+}
