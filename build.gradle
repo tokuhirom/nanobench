@@ -1,9 +1,11 @@
+// ./gradlew clean && ./gradlew uploadArchives -Prelease
 apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: "signing"
+apply plugin: "idea"
 
 group = 'me.geso'
-version = '0.2.1-SNAPSHOT'
+version = '0.2.1'
 
 description = """nanobench"""
 
