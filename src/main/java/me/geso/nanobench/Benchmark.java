@@ -1,15 +1,9 @@
 package me.geso.nanobench;
 
-import java.io.File;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +21,7 @@ public class Benchmark {
 	private boolean debug = false;
 	private final Object suite;
 
-	final Method[] methods;
+	private final Method[] methods;
 
 	public Benchmark(Object suite) {
 		this.suite = suite;
@@ -39,34 +33,6 @@ public class Benchmark {
 			}
 		}
 		this.methods = methodsList.toArray(new Method[methodsList.size()]);
-	}
-
-	public static void main(String[] args) throws Exception {
-		new CLI().run(args);
-	}
-
-	static class CLI {
-
-		public void run(String[] args) throws Exception {
-			if (args.length == 0) {
-				help();
-				return;
-			}
-
-			File f = new File(".");
-			URL[] cp = { f.toURI().toURL() };
-			try (URLClassLoader classLoader = new URLClassLoader(cp,
-					ClassLoader.getSystemClassLoader())) {
-				Class<?> targetClass = classLoader.loadClass(args[0]);
-				Object suite = targetClass.newInstance();
-				Benchmark benchmark = new Benchmark(suite);
-				benchmark.runByTime(1).timethese().cmpthese();
-			}
-		}
-
-		public void help() {
-			System.out.println("Usage: java -jar nanobench.jar BenchmarkClass");
-		}
 	}
 
 	public Benchmark enableDebugging() {
@@ -241,7 +207,6 @@ public class Benchmark {
 			}
 			if (result.cputime == 0) {
 				if (++zeros > 16) {
-
 					throw new RuntimeException(
 							"Timing is consistently zero in estimation loop, cannot benchmark. N="
 									+ n);
@@ -268,7 +233,7 @@ public class Benchmark {
 		}
 	}
 
-	private Score runloop(long ntimes, Method method) throws Exception {
+	private Score runloop(long ntimes, Method method) throws InvocationTargetException, IllegalAccessException {
 		System.gc();
 		System.runFinalization();
 
@@ -295,73 +260,6 @@ public class Benchmark {
 		System.runFinalization();
 
 		return score;
-	}
-
-	public static class Score {
-
-		public long cputime;
-		public final long usertime;
-		public final long systemtime;
-		public final long iters;
-		public final long real;
-
-		public Score(long real, long cputime, long usertime, long systemtime,
-				long iters) {
-			this.real = real;
-			this.cputime = cputime;
-			this.usertime = usertime;
-			this.systemtime = systemtime;
-			this.iters = iters;
-		}
-
-		public Score add(Score other) {
-			return new Score( //
-					this.real + other.real, //
-					this.cputime + other.cputime, //
-					this.usertime + other.usertime, //
-					this.systemtime + other.systemtime, //
-					this.iters + other.iters);
-		}
-
-		public Score diff(Score other) {
-			return new Score( //
-					Math.max(this.real - other.real, 0), //
-					Math.max(this.cputime - other.cputime, 0), //
-					Math.max(this.usertime - other.usertime, 0), //
-					Math.max(this.systemtime - other.systemtime, 0), //
-					this.iters);
-		}
-
-		public String format() {
-			// timestr
-			long n = iters;
-			long elapsed = usertime + systemtime;
-			StringBuilder builder = new StringBuilder();
-			builder.append(String.format(
-					"%2d wallclock secs (%5.2f usr + %5.2f sys = %5.2f CPU)",
-					(long) (real / 1_000_000_000.0),
-					(double) usertime / 1_000_000_000.0,
-					(double) systemtime / 1_000_000_000.0,
-					(double) cputime / 1_000_000_000.0));
-			if (elapsed > 0) {
-				builder.append(String.format(" @ %5.2f/s (n=%d)", //
-						(double) n / (elapsed / 1_000_000_000.0), //
-						n));
-			}
-			return builder.toString();
-		}
-
-		public double rate() {
-			long elapsed = usertime + systemtime;
-			return (double) iters / (elapsed / 1_000_000_000.0);
-		}
-
-		public String formatRate() {
-			double rate = rate();
-			String format = rate >= 100 ? "%.0f" : rate >= 10 ? "%.1f"
-					: rate >= 1 ? "%.2f" : rate >= 0.1 ? "%.3f" : "%.2f";
-			return String.format(format + "/s", rate);
-		}
 	}
 
 	/**
@@ -394,116 +292,4 @@ public class Benchmark {
 				: 0L;
 	}
 
-	public static class Result {
-
-		private final List<ScenarioResult> results;
-
-		public Result(List<ScenarioResult> results) {
-			this.results = results;
-		}
-
-		public Result timethese() {
-			System.out.println("\nScore:\n");
-
-			for (ScenarioResult result : results) {
-				System.out.println(result.title + ": " + result.score.format());
-			}
-			return this;
-		}
-
-		/**
-		 * [ '', 'Rate', 'b', 'a' ], [ 'b', '2885232/s', '--', '-59%' ], [ 'a',
-		 * '7099126/s', '146%', '--' ],
-		 *
-		 * @return
-		 */
-		public Result cmpthese() {
-			System.out.println("\nComparison chart:\n");
-
-			List<List<String>> rows = this.createComparisionTable();
-			System.out.print(this.renderTable(rows));
-			return this;
-		}
-
-		public List<List<String>> createComparisionTable() {
-			List<List<String>> rows = new ArrayList<>();
-			List<String> headerRow = new ArrayList<>();
-			headerRow.add("");
-			headerRow.add("Rate");
-			for (ScenarioResult result : results) {
-				headerRow.add(result.title);
-			}
-			rows.add(headerRow);
-
-			for (ScenarioResult result : results) {
-				List<String> row = new ArrayList<>();
-				row.add(result.title);
-				row.add(result.score.formatRate());
-
-				for (ScenarioResult col : results) {
-					if (col == result) {
-						row.add("--");
-					} else {
-						row.add(String.format("%.0f%%",
-								100 * result.score.rate() / col.score.rate()
-										- 100));
-					}
-				}
-				rows.add(row);
-			}
-			return rows;
-		}
-
-		public String renderTable(List<List<String>> rows) {
-			StringBuilder buffer = new StringBuilder();
-			List<Integer> colSizes = new ArrayList<>(rows.get(0).size());
-			for (int x = 0; x < rows.get(0).size(); ++x) {
-				colSizes.add(1); // fill initial values.
-			}
-			for (int x = 0; x < rows.get(0).size(); ++x) {
-				for (int y = 0; y < rows.size(); ++y) {
-					List<String> row = rows.get(y);
-					String col = row.get(x);
-					colSizes.set(x, Math.max(colSizes.get(x), col.length()));
-					// Integer currentX = colSizes.get(x);
-				}
-			}
-
-			for (int y = 0; y < rows.size(); ++y) {
-				List<String> row = rows.get(y);
-				for (int x = 0; x < row.size(); ++x) {
-					buffer.append(String.format("  %" + colSizes.get(x) + "s",
-							row.get(x)));
-				}
-				buffer.append("\n");
-			}
-			return buffer.toString();
-		}
-	}
-
-	public static class ScenarioResult {
-
-		public final String title;
-		// in nanosec.
-		public final Score score;
-
-		@Override
-		public String toString() {
-			return "Result [title=" + title + ", score=" + score + "]";
-		}
-
-		public ScenarioResult(String title, Score score) {
-			this.title = title;
-			this.score = score;
-		}
-	}
-
-	/**
-	 * The {@code Bench} annotation tells nanobench that the {@code public} method
-	 * to which it is attached can be run as a benchmark target.
-	 */
-	@Retention(RetentionPolicy.RUNTIME)
-	@Target(ElementType.METHOD)
-	public @interface Bench {
-	}
 }

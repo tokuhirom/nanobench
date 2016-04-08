@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import me.geso.nanobench.Benchmark.Bench;
-
 import org.junit.Test;
 
 public class BenchmarkTest {
