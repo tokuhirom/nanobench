@@ -3,3 +3,8 @@
 /.classpath
 /.settings
 /nb-configuration.xml
+/.idea/
+/pom.xml
+*.iml
+/.gradle/
+/build/
