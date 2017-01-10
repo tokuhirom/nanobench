@@ -1,7 +1,7 @@
 nanobench
 =========
 
-[![Build Status](https://travis-ci.org/tokuhirom/nanobench.svg?branch=master)](https://travis-ci.org/tokuhirom/nanobench)
+[![CircleCI](https://circleci.com/gh/tokuhirom/nanobench.svg?style=svg)](https://circleci.com/gh/tokuhirom/nanobench)
 
 This is a tiny benchmarking library for Java 8.
 
